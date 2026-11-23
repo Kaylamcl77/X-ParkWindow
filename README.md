@@ -6,7 +6,7 @@ A mobile-friendly STFX student prototype for estimating nearby parking, permit c
 
 Open `index.html` in a browser, or publish the repository with GitHub Pages. The app uses plain HTML, CSS, and JavaScript; no build tools or dependencies are required.
 
-Parking lots, distances, availability, class-change patterns, driver reports, and the health-app connection are fictional prototype data.
+Parking-area names and restrictions follow the supplied STFX parking list. Availability, walk distances, class-change patterns, driver reports, and health-app values are illustrative prototype estimates, not live data. Always check posted signs and event restrictions before parking.
 
 ## Optional Google Maps traffic
 

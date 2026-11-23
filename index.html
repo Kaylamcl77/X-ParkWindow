@@ -89,7 +89,7 @@
     .notice strong { color: #1d3471; }
     .notice-icon { flex: 0 0 auto; font-size: 1rem; }
 
-    .planner-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+    .planner-grid { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
     .panel, .lot-card {
       border: 1px solid var(--line);
       border-radius: 16px;
@@ -97,6 +97,9 @@
       box-shadow: 0 4px 16px #18346a0a;
     }
     .panel { padding: 21px; }
+    #planner-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+    #planner-form .field:nth-of-type(5) { grid-column: 1 / -1; }
+    #planner-form .primary-button { grid-column: 1 / -1; }
     .panel h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.02em; }
     .panel-subtitle { margin: 4px 0 18px; color: var(--muted); font-size: .83rem; }
     .field { min-width: 0; margin-bottom: 14px; }
@@ -213,6 +216,8 @@
 
     @media (max-width: 760px) {
       .planner-grid { grid-template-columns: 1fr; }
+      #planner-form { grid-template-columns: 1fr; gap: 0; }
+      #planner-form .field:nth-of-type(5), #planner-form .primary-button { grid-column: auto; }
       .header-inner, main, .footer-inner { width: min(100% - 28px, 600px); }
       .header-inner { padding: 22px 0 25px; }
       main { padding-top: 18px; }
@@ -332,8 +337,9 @@
           </div>
           <span class="estimate-pill">ESTIMATES ONLY</span>
         </div>
-        <p class="field-hint" style="margin:0 0 12px">Predictions are illustrative and based on fictional class-change patterns and simulated driver reports.</p>
-        <div class="lot-list" id="lot-results" aria-live="polite"></div>
+        <p class="field-hint" style="margin:0 0 12px">Parking-area names and restrictions follow the supplied list. Availability, walk distances, class-change patterns, and driver reports are prototype estimates.</p>
+        <p class="field-hint" style="margin:0 0 12px">P18a is omitted (no parking anytime). P18b and P18c may be restricted during funerals and parish events.</p>
+        <div class="lot-list" id="lot-results" role="list" aria-live="polite"></div>
       </section>
     </div>
 
@@ -376,10 +382,25 @@
       "use strict";
 
       const lots = [
-        { id: "lot-a", name: "Campus Lot A", distances: [210, 330, 420, 290, 370, 310, 260, 340], report: 0.74, openOffset: -8, occupied: true },
-        { id: "lot-b", name: "Campus Lot B", distances: [350, 240, 310, 400, 280, 390, 330, 260], report: 0.62, openOffset: 3, occupied: true },
-        { id: "lot-c", name: "Campus Lot C", distances: [490, 410, 260, 350, 460, 440, 380, 300], report: 0.53, openOffset: 10, occupied: true },
-        { id: "lot-d", name: "Campus Lot D", distances: [300, 450, 380, 230, 310, 280, 420, 390], report: 0.68, openOffset: -2, occupied: true }
+        { id: "p2", name: "P2 · Hillcrest Street", overnightEligible: false, distances: [310, 430, 700, 560, 500, 450, 420, 550], report: 0.64, openOffset: -8, occupied: true },
+        { id: "p3", name: "P3 · Bishops Hall / West Street area", overnightEligible: true, distances: [570, 660, 840, 720, 620, 740, 800, 860], report: 0.65, openOffset: 3, occupied: true },
+        { id: "p4", name: "P4 · Notre Dame Avenue", overnightEligible: true, distances: [220, 360, 600, 440, 440, 340, 390, 520], report: 0.61, openOffset: 10, occupied: true },
+        { id: "p5", name: "P5 · StFX Stadium / Bloomfield Centre", overnightEligible: false, distances: [520, 650, 290, 560, 650, 520, 250, 120], report: 0.78, openOffset: -2, occupied: true },
+        { id: "p6", name: "P6 · Overnight-eligible lot", overnightEligible: true, distances: [430, 550, 760, 600, 570, 530, 600, 650], report: 0.58, openOffset: 5, occupied: true },
+        { id: "p7", name: "P7 · Daytime / general campus lot", overnightEligible: false, distances: [260, 390, 640, 500, 460, 410, 390, 480], report: 0.7, openOffset: -6, occupied: true },
+        { id: "p8a", name: "P8a · Highland Drive / Highway-Trunk #4", overnightEligible: true, distances: [950, 1060, 1250, 1100, 1000, 1130, 1150, 1230], report: 0.56, openOffset: 4, occupied: true },
+        { id: "p8b", name: "P8b · Highland Drive / Highway-Trunk #4", overnightEligible: true, distances: [900, 1020, 1210, 1060, 960, 1090, 1110, 1190], report: 0.54, openOffset: 8, occupied: true },
+        { id: "p9", name: "P9 · Charles V. Keating Centre (overflow)", overnightEligible: false, distances: [650, 780, 180, 520, 600, 590, 440, 680], report: 0.55, openOffset: -4, occupied: true },
+        { id: "p10", name: "P10 · Charles V. Keating Centre (main lot)", overnightEligible: false, distances: [620, 750, 150, 500, 580, 570, 410, 650], report: 0.73, openOffset: 2, occupied: true },
+        { id: "p11", name: "P11 · Overnight-eligible lot (designated rows)", overnightEligible: true, distances: [510, 620, 820, 680, 600, 670, 700, 780], report: 0.57, openOffset: 7, occupied: true },
+        { id: "p12", name: "P12 · Fairview Street", overnightEligible: true, distances: [460, 570, 790, 630, 550, 620, 670, 740], report: 0.63, openOffset: -9, occupied: true },
+        { id: "p13", name: "P13 · Coady International House", overnightEligible: false, distances: [240, 380, 660, 460, 420, 370, 480, 590], report: 0.66, openOffset: 6, occupied: true },
+        { id: "p14", name: "P14 · Daytime / general campus lot", overnightEligible: false, distances: [320, 450, 700, 540, 500, 460, 440, 550], report: 0.69, openOffset: -3, occupied: true },
+        { id: "p15", name: "P15 · Coady West Wing", overnightEligible: false, distances: [220, 350, 630, 430, 390, 340, 450, 560], report: 0.6, openOffset: 1, occupied: true },
+        { id: "p16", name: "P16 · Rollerskate Park", overnightEligible: true, distances: [610, 730, 480, 780, 850, 710, 760, 850], report: 0.51, openOffset: 9, occupied: true },
+        { id: "p17", name: "P17 · Oneway / Bishops Place area", overnightEligible: true, distances: [590, 700, 890, 750, 650, 780, 820, 900], report: 0.59, openOffset: -1, occupied: true },
+        { id: "p18b", name: "P18b · St. Ninian’s Cathedral", overnightEligible: false, restriction: "Check for funeral or parish-event restrictions before parking.", distances: [820, 910, 680, 1010, 1030, 900, 930, 1050], report: 0.48, openOffset: 5, occupied: true },
+        { id: "p18c", name: "P18c · St. Ninian’s Cathedral", overnightEligible: false, restriction: "Check for funeral or parish-event restrictions before parking.", distances: [840, 930, 700, 1030, 1050, 920, 950, 1070], report: 0.46, openOffset: 10, occupied: true }
       ];
       const locationSelect = document.getElementById("location");
       const startInput = document.getElementById("class-start");
@@ -425,11 +446,11 @@
         document.getElementById("night-permit").setAttribute("aria-pressed", String(value === "night"));
         document.getElementById("permit-hint").textContent = value === "day"
           ? "Daytime permit: estimated valid hours 7:00 AM–5:00 PM."
-          : "Nighttime permit: estimated valid hours 5:00 PM–7:00 AM (overnight).";
+          : "Nighttime permit: estimated valid hours 5:00 PM–7:00 AM; only listed overnight-eligible areas qualify.";
         render();
       }
 
-      function permitCoverage(arrival, classEnd) {
+      function permitCoverage(arrival, classEnd, lot) {
         const day = permit === "day";
         const arrivalMinute = ((arrival % 1440) + 1440) % 1440;
         const dayStart = Math.floor(arrival / 1440) * 1440;
@@ -442,7 +463,9 @@
           allowedUntil = arrivalMinute >= dayEndMinutes
             ? dayStart + 1440 + dayMinutes
             : dayStart + dayMinutes;
-          covers = (arrivalMinute >= dayEndMinutes || arrivalMinute < dayMinutes) && classEnd <= allowedUntil;
+          covers = lot.overnightEligible &&
+            (arrivalMinute >= dayEndMinutes || arrivalMinute < dayMinutes) &&
+            classEnd <= allowedUntil;
         }
         return { allowedUntil, covers };
       }
@@ -487,7 +510,7 @@
           const walkMinutes = (lot.distances[locationIndex] / 1000) / (paceKmh / 60);
           const arrival = start - walkMinutes;
           const leaveBy = arrival - drive - 5;
-          const coverage = permitCoverage(arrival, end);
+          const coverage = permitCoverage(arrival, end, lot);
           const availability = estimatedAvailability(lot, arrival, walkMinutes);
           const orderScore = (coverage.covers ? 100 : 0) + availability - walkMinutes * 0.12;
           return { lot, walkMinutes, arrival, leaveBy, coverage, availability, orderScore };
@@ -500,18 +523,23 @@
           const { lot, walkMinutes, arrival, leaveBy, coverage, availability } = plan;
           const recommended = index === preferredIndex;
           const recommendationLabel = hasPermitMatch ? "Best fit" : "Closest option";
-          const permitLabel = coverage.covers ? "Permit covers stay" : "Permit may expire early";
+          const notOvernightEligible = permit === "night" && !lot.overnightEligible;
+          const permitLabel = notOvernightEligible
+            ? "Not overnight-eligible"
+            : coverage.covers ? "Permit covers stay" : "Permit may expire early";
           const badgeClass = coverage.covers ? "badge" : "badge caution";
           const distance = lot.distances[locationIndex];
           const nextDay = coverage.allowedUntil > 1440 || (arrival < 0 && coverage.allowedUntil > 0);
-          const allowed = nextDay ? formatTime(coverage.allowedUntil) + " next day" : formatTime(coverage.allowedUntil);
+          const allowed = notOvernightEligible
+            ? "Not eligible with this permit"
+            : nextDay ? formatTime(coverage.allowedUntil) + " next day" : formatTime(coverage.allowedUntil);
           const leave = formatTime(leaveBy);
           const stateNote = lot.occupied
             ? "Walking to class keeps your car here; the spot stays occupied."
             : "You simulated driving out; this space is now counted as available.";
-          return `<article class="lot-card ${recommended && coverage.covers ? "recommended" : ""}">
+          return `<article class="lot-card ${recommended && coverage.covers ? "recommended" : ""}" role="listitem">
             <div class="lot-top">
-              <div><h3 class="lot-name">${lot.name}${recommended ? ` · ${recommendationLabel}` : ""}</h3><p class="lot-distance">Illustrative campus lot · about ${distance} m to ${locationSelect.value}</p></div>
+              <div><h3 class="lot-name">${lot.name}${recommended ? ` · ${recommendationLabel}` : ""}</h3><p class="lot-distance">Approximate walk: ${distance} m to ${locationSelect.value}</p></div>
               <span class="${badgeClass}">${permitLabel}</span>
             </div>
             <div class="availability">
@@ -525,7 +553,7 @@
               <div><span class="fact-label">Parking buffer</span><span class="fact-value">5 min</span></div>
               <div class="leave-fact"><span><span class="fact-label">Personalized leave-by time</span><span class="fact-value">${leave}</span></span><span class="fact-label">Drive + parking + walk</span></div>
             </div>
-            <p class="lot-note">${stateNote}${coverage.covers ? "" : " This permit does not cover the full estimated parking stay, so choose a different permit or check posted rules."}</p>
+            <p class="lot-note">${stateNote}${lot.restriction ? ` ${lot.restriction}` : ""}${coverage.covers ? "" : notOvernightEligible ? " This area is not marked overnight-eligible in the supplied lot list." : " This permit does not cover the full estimated parking stay, so choose a different permit or check posted rules."}</p>
             <div class="lot-actions">
               <button class="small-button" type="button" data-action="walk" data-lot="${lot.id}">Simulate walking away</button>
               <button class="small-button" type="button" data-action="drive" data-lot="${lot.id}">Simulate driving out</button>

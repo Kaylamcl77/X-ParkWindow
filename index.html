@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173a96">
+  <meta name="description" content="A student prototype for planning parking and walking to your next STFX class.">
+  <title>X ParkWindow | STFX parking planner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --blue: #173a96;
+      --blue-dark: #102b73;
+      --blue-soft: #eaf0ff;
+      --ink: #17213a;
+      --muted: #64708a;
+      --line: #e1e6f0;
+      --surface: #fff;
+      --canvas: #f5f7fc;
+      --green: #18764b;
+      --green-soft: #e9f7ef;
+      --amber: #996314;
+      --amber-soft: #fff4dc;
+      --red: #a63c43;
+      --red-soft: #fff0ef;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--canvas);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    button, input, select { font: inherit; }
+    button, select, input[type="time"], input[type="text"], input[type="password"], input[type="number"] { min-height: 44px; }
+    button { cursor: pointer; }
+
+    .site-header {
+      color: white;
+      background: linear-gradient(118deg, var(--blue-dark), #2454c1);
+    }
+
+    .header-inner, main, .footer-inner {
+      width: min(1120px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .header-inner { padding: 26px 0 30px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid #ffffff72;
+      border-radius: 13px;
+      background: #ffffff19;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .brand-name { margin: 0; font-size: 1.18rem; font-weight: 760; letter-spacing: -.025em; }
+    .brand-caption { margin: 2px 0 0; color: #d7e2ff; font-size: .79rem; }
+    .intro { max-width: 720px; margin-top: 25px; }
+    .eyebrow { color: #dbe5ff; font-size: .73rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    .intro h1 { margin: 7px 0 8px; font-size: clamp(1.7rem, 4vw, 2.45rem); letter-spacing: -.045em; line-height: 1.13; }
+    .intro p { max-width: 650px; margin: 0; color: #e2e9ff; font-size: .95rem; }
+
+    main { padding: 25px 0 46px; }
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 12px 14px;
+      border: 1px solid #d6e0ff;
+      border-radius: 12px;
+      background: #edf2ff;
+      color: #324678;
+      font-size: .84rem;
+    }
+    .notice strong { color: #1d3471; }
+    .notice-icon { flex: 0 0 auto; font-size: 1rem; }
+
+    .planner-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+    .panel, .lot-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: 0 4px 16px #18346a0a;
+    }
+    .panel { padding: 21px; }
+    .panel h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.02em; }
+    .panel-subtitle { margin: 4px 0 18px; color: var(--muted); font-size: .83rem; }
+    .field { min-width: 0; margin-bottom: 14px; }
+    .field label, .field-label { display: block; margin-bottom: 6px; font-size: .82rem; font-weight: 680; }
+    .field-hint { display: block; margin-top: 5px; color: var(--muted); font-size: .75rem; }
+    select, input[type="time"], input[type="text"], input[type="password"], input[type="number"] {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #ccd4e3;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+    }
+    select:focus, input:focus, button:focus-visible, a:focus-visible {
+      outline: 3px solid #86a7ff;
+      outline-offset: 2px;
+    }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .segment {
+      display: flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid #ccd4e3;
+      border-radius: 10px;
+      background: white;
+      color: #46516a;
+      font-size: .84rem;
+      font-weight: 650;
+    }
+    .segment[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+    .pace-wrap { padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: #fafbfe; }
+    .pace-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .pace-value { color: var(--blue); font-size: .84rem; font-weight: 750; }
+    input[type="range"] { width: 100%; margin: 12px 0 3px; accent-color: var(--blue); }
+    .pace-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .text-button { padding: 2px 0; border: 0; background: none; color: var(--blue); font-size: .78rem; font-weight: 700; text-align: left; }
+    .text-button:hover { text-decoration: underline; }
+    .health-note { min-height: 1.1em; margin: 4px 0 0; color: var(--muted); font-size: .73rem; }
+    .primary-button, .secondary-button, .small-button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px 15px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font-size: .84rem;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      transition: background .15s, border-color .15s, transform .15s;
+    }
+    .primary-button { width: 100%; margin-top: 3px; background: var(--blue); color: white; }
+    .primary-button:hover { background: var(--blue-dark); }
+    .secondary-button, .small-button { border-color: #cbd6f3; background: #f5f7ff; color: var(--blue); }
+    .secondary-button:hover, .small-button:hover { border-color: #9eb4ee; background: #eaf0ff; }
+    .small-button { min-height: 38px; padding: 7px 10px; font-size: .77rem; }
+
+    .results-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .results-head h2 { margin: 0; font-size: 1.1rem; letter-spacing: -.025em; }
+    .results-head p { margin: 4px 0 0; color: var(--muted); font-size: .8rem; }
+    .estimate-pill, .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: .69rem;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .estimate-pill { padding: 5px 9px; background: var(--amber-soft); color: var(--amber); }
+    .lot-list { display: grid; gap: 12px; }
+    .lot-card { padding: 15px; }
+    .lot-card.recommended { border-color: #8eb6a1; box-shadow: 0 0 0 1px #8eb6a144; }
+    .lot-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .lot-name { margin: 0; font-size: .98rem; letter-spacing: -.015em; }
+    .lot-distance { margin: 2px 0 0; color: var(--muted); font-size: .76rem; }
+    .badge { margin-top: 1px; padding: 5px 8px; background: var(--green-soft); color: var(--green); }
+    .badge.caution { background: var(--red-soft); color: var(--red); }
+    .badge.neutral { background: #eef1f7; color: #59647a; }
+    .availability { display: flex; align-items: center; gap: 8px; margin: 13px 0 10px; }
+    .availability-score { color: var(--blue); font-size: 1.35rem; font-weight: 780; letter-spacing: -.04em; }
+    .availability-copy { color: #3c4760; font-size: .77rem; line-height: 1.35; }
+    .lot-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 12px; padding-top: 11px; border-top: 1px solid #edf0f6; }
+    .fact-label { display: block; color: var(--muted); font-size: .69rem; }
+    .fact-value { display: block; margin-top: 1px; font-size: .8rem; font-weight: 700; }
+    .leave-fact { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; padding: 9px 10px; border-radius: 9px; background: var(--blue-soft); }
+    .leave-fact .fact-label { color: #40558d; }
+    .leave-fact .fact-value { color: var(--blue); font-size: .96rem; }
+    .lot-note { margin: 10px 0 0; color: #515d75; font-size: .75rem; }
+    .lot-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
+    .empty-state { padding: 20px; border: 1px dashed #cbd3e2; border-radius: 12px; color: var(--muted); font-size: .85rem; text-align: center; }
+
+    .traffic-panel { margin-top: 20px; }
+    .traffic-toggle { display: flex; align-items: flex-start; gap: 10px; }
+    .traffic-toggle input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--blue); }
+    .traffic-toggle label { font-size: .87rem; font-weight: 720; }
+    .traffic-toggle p { margin: 3px 0 0; color: var(--muted); font-size: .77rem; font-weight: 400; }
+    .traffic-fields { display: grid; grid-template-columns: 1fr 1fr minmax(170px, .75fr); gap: 12px; margin-top: 14px; }
+    .traffic-fields[hidden] { display: none; }
+    .traffic-action { display: flex; align-items: end; }
+    .traffic-action .secondary-button { width: 100%; }
+    .traffic-result { margin: 12px 0 0; color: #354468; font-size: .8rem; }
+    .traffic-result:empty { display: none; }
+    .traffic-result.error { color: var(--red); }
+    .traffic-disclaimer { margin: 10px 0 0; color: var(--muted); font-size: .73rem; }
+    .footer { border-top: 1px solid var(--line); background: #fff; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; color: var(--muted); font-size: .76rem; }
+    .footer strong { color: var(--blue); font-weight: 750; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 760px) {
+      .planner-grid { grid-template-columns: 1fr; }
+      .header-inner, main, .footer-inner { width: min(100% - 28px, 600px); }
+      .header-inner { padding: 22px 0 25px; }
+      main { padding-top: 18px; }
+      .traffic-fields { grid-template-columns: 1fr 1fr; }
+      .traffic-action { grid-column: 1 / -1; }
+    }
+    @media (max-width: 420px) {
+      .panel { padding: 16px; }
+      .field-row, .traffic-fields { grid-template-columns: 1fr; gap: 0; }
+      .traffic-action { grid-column: auto; margin-bottom: 14px; }
+      .results-head { flex-direction: column; }
+      .lot-facts { gap: 9px; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">P</div>
+        <div>
+          <p class="brand-name">X ParkWindow</p>
+          <p class="brand-caption">Your next class, with a little less guesswork.</p>
+        </div>
+      </div>
+      <div class="intro">
+        <div class="eyebrow">STFX parking planner</div>
+        <h1>Find a spot. Make it to class.</h1>
+        <p>Plan your drive, compare estimated campus parking, and see when to leave for your next class or study session.</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="notice" role="note">
+      <span class="notice-icon" aria-hidden="true">ℹ</span>
+      <div><strong>Student prototype:</strong> parking lots, availability, walking distances, health-app data, and driver reports are fictional estimates—not live campus information.</div>
+    </div>
+
+    <div class="planner-grid">
+      <section class="panel" aria-labelledby="plan-heading">
+        <h2 id="plan-heading">Plan your trip</h2>
+        <p class="panel-subtitle">A few details help tailor your parking window.</p>
+        <form id="planner-form">
+          <div class="field">
+            <span class="field-label">Your parking permit</span>
+            <div class="segmented" role="group" aria-label="Parking permit">
+              <button class="segment" id="day-permit" type="button" aria-pressed="true">☀️ Daytime</button>
+              <button class="segment" id="night-permit" type="button" aria-pressed="false">🌙 Nighttime</button>
+            </div>
+            <span class="field-hint" id="permit-hint">Daytime permit: estimated valid hours 7:00 AM–5:00 PM.</span>
+          </div>
+
+          <div class="field">
+            <label for="location">Class / study location</label>
+            <select id="location" name="location">
+              <option value="SCHW">SCHW</option>
+              <option value="Mount Saint Bernard">Mount Saint Bernard</option>
+              <option value="Amelia Saputo Centre">Amelia Saputo Centre</option>
+              <option value="Nasso Family Science Center">Nasso Family Science Center</option>
+              <option value="J. Bruce Brown Hall">J. Bruce Brown Hall</option>
+              <option value="Mulroney Hall">Mulroney Hall</option>
+              <option value="Angus L. Macdonald Library">Angus L. Macdonald Library</option>
+              <option value="Bloomfield Centre">Bloomfield Centre</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Class / study time</span>
+            <div class="field-row">
+              <div>
+                <label class="sr-only" for="class-start">Start time</label>
+                <input id="class-start" name="class-start" type="time" value="10:00" required>
+                <span class="field-hint">Starts</span>
+              </div>
+              <div>
+                <label class="sr-only" for="class-end">End time</label>
+                <input id="class-end" name="class-end" type="time" value="11:00" required>
+                <span class="field-hint">Ends</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="drive-time">Estimated drive to campus</label>
+            <div class="field-row">
+              <input id="drive-time" name="drive-time" type="number" min="1" max="240" value="15" inputmode="numeric" required aria-label="Estimated drive time in minutes">
+              <span style="display:flex;align-items:center;color:var(--muted);font-size:.82rem">minutes</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="pace">Your walking pace</label>
+            <div class="pace-wrap">
+              <div class="pace-head">
+                <span class="field-hint" style="margin:0">Choose a pace or simulate a health-app connection.</span>
+                <span class="pace-value" id="pace-value">4.8 km/h</span>
+              </div>
+              <input id="pace" type="range" min="2" max="7" step="0.1" value="4.8" aria-label="Walking pace in kilometers per hour">
+              <div class="pace-actions">
+                <span class="field-hint" style="margin:0">Leisurely&nbsp; 2 &nbsp;—&nbsp; 7 &nbsp; Brisk</span>
+                <button class="text-button" id="simulate-health" type="button">Simulate health app connection</button>
+              </div>
+              <p class="health-note" id="health-note" aria-live="polite">Manual pace selected.</p>
+            </div>
+          </div>
+          <button class="primary-button" type="submit">Find my parking plan <span aria-hidden="true">→</span></button>
+        </form>
+      </section>
+
+      <section aria-labelledby="results-heading">
+        <div class="results-head">
+          <div>
+            <h2 id="results-heading">Your parking window</h2>
+            <p id="results-summary">Estimates use fictional class-change patterns and simulated driver reports.</p>
+          </div>
+          <span class="estimate-pill">ESTIMATES ONLY</span>
+        </div>
+        <p class="field-hint" style="margin:0 0 12px">Predictions are illustrative and based on fictional class-change patterns and simulated driver reports.</p>
+        <div class="lot-list" id="lot-results" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <section class="panel traffic-panel" aria-labelledby="traffic-heading">
+      <div class="traffic-toggle">
+        <input id="traffic-enabled" type="checkbox">
+        <div>
+          <label for="traffic-enabled" id="traffic-heading">Use Google Maps traffic (optional)</label>
+          <p>With your own Google Maps Routes API key, replace the drive-time estimate with a traffic-aware route estimate.</p>
+        </div>
+      </div>
+      <div class="traffic-fields" id="traffic-fields" hidden>
+        <div class="field" style="margin-bottom:0">
+          <label for="origin">Starting address</label>
+          <input id="origin" type="text" autocomplete="street-address" placeholder="Your starting point">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label for="maps-key">Google Maps API key</label>
+          <input id="maps-key" type="password" autocomplete="off" placeholder="Paste your restricted API key">
+          <span class="field-hint">Used for this request only; never saved.</span>
+        </div>
+        <div class="traffic-action">
+          <button class="secondary-button" id="traffic-button" type="button">Get traffic estimate</button>
+        </div>
+      </div>
+      <p class="traffic-result" id="traffic-result" role="status" aria-live="polite"></p>
+      <p class="traffic-disclaimer">Requires a Google Cloud project with the Routes API enabled, billing configured, and an API key restricted to your website. Your route request is sent directly to Google. Without it, the editable drive-time estimate above is used.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span><strong>X ParkWindow</strong> · For planning, not parking enforcement.</span>
+      <span>Student prototype</span>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const lots = [
+        { id: "lot-a", name: "Campus Lot A", distances: [210, 330, 420, 290, 370, 310, 260, 340], report: 0.74, openOffset: -8, occupied: true },
+        { id: "lot-b", name: "Campus Lot B", distances: [350, 240, 310, 400, 280, 390, 330, 260], report: 0.62, openOffset: 3, occupied: true },
+        { id: "lot-c", name: "Campus Lot C", distances: [490, 410, 260, 350, 460, 440, 380, 300], report: 0.53, openOffset: 10, occupied: true },
+        { id: "lot-d", name: "Campus Lot D", distances: [300, 450, 380, 230, 310, 280, 420, 390], report: 0.68, openOffset: -2, occupied: true }
+      ];
+      const locationSelect = document.getElementById("location");
+      const startInput = document.getElementById("class-start");
+      const endInput = document.getElementById("class-end");
+      const driveInput = document.getElementById("drive-time");
+      const paceInput = document.getElementById("pace");
+      const results = document.getElementById("lot-results");
+      const summary = document.getElementById("results-summary");
+      const trafficEnabled = document.getElementById("traffic-enabled");
+      let permit = "day";
+      let trafficDurationMinutes = null;
+      let hasTrafficEstimate = false;
+
+      const locations = Array.from(locationSelect.options).map((option) => option.value);
+      const dayMinutes = 7 * 60;
+      const dayEndMinutes = 17 * 60;
+
+      function parseTime(value) {
+        if (!/^\d{2}:\d{2}$/.test(value)) return null;
+        const [hours, minutes] = value.split(":").map(Number);
+        if (hours > 23 || minutes > 59) return null;
+        return hours * 60 + minutes;
+      }
+
+      function formatTime(totalMinutes) {
+        const normalized = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
+        const hours = Math.floor(normalized / 60);
+        const minutes = normalized % 60;
+        return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      }
+
+      function formatDuration(minutes) {
+        const rounded = Math.max(1, Math.round(minutes));
+        if (rounded < 60) return `${rounded} min`;
+        const hours = Math.floor(rounded / 60);
+        const remainder = rounded % 60;
+        return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
+      }
+
+      function setPermit(value) {
+        permit = value;
+        document.getElementById("day-permit").setAttribute("aria-pressed", String(value === "day"));
+        document.getElementById("night-permit").setAttribute("aria-pressed", String(value === "night"));
+        document.getElementById("permit-hint").textContent = value === "day"
+          ? "Daytime permit: estimated valid hours 7:00 AM–5:00 PM."
+          : "Nighttime permit: estimated valid hours 5:00 PM–7:00 AM (overnight).";
+        render();
+      }
+
+      function permitCoverage(arrival, classEnd) {
+        const day = permit === "day";
+        const arrivalMinute = ((arrival % 1440) + 1440) % 1440;
+        const dayStart = Math.floor(arrival / 1440) * 1440;
+        let allowedUntil;
+        let covers;
+        if (day) {
+          allowedUntil = dayStart + dayEndMinutes;
+          covers = arrivalMinute >= dayMinutes && arrivalMinute < dayEndMinutes && classEnd <= allowedUntil;
+        } else {
+          allowedUntil = arrivalMinute >= dayEndMinutes
+            ? dayStart + 1440 + dayMinutes
+            : dayStart + dayMinutes;
+          covers = (arrivalMinute >= dayEndMinutes || arrivalMinute < dayMinutes) && classEnd <= allowedUntil;
+        }
+        return { allowedUntil, covers };
+      }
+
+      function nextOpeningWindow(arrival, offset) {
+        const target = arrival + offset;
+        const hourlyChange = Math.floor(target / 60) * 60 + 50;
+        const previousChange = hourlyChange > target ? hourlyChange - 60 : hourlyChange;
+        const nextChange = previousChange + 60;
+        const change = Math.abs(previousChange - target) <= Math.abs(nextChange - target) ? previousChange : nextChange;
+        return `${formatTime(change - 10)}–${formatTime(change + 5)}`;
+      }
+
+      function estimatedAvailability(lot, arrival, walkMinutes) {
+        const phase = ((arrival % 60) + 60) % 60;
+        const nearChange = Math.max(0, 1 - Math.min(Math.abs(phase - 50), 60 - Math.abs(phase - 50)) / 25);
+        const walkPenalty = Math.min(0.18, walkMinutes / 180);
+        const adjustment = hasTrafficEstimate ? Math.min(0.12, trafficDurationMinutes / 300) : 0;
+        return Math.max(8, Math.min(91, Math.round((lot.report * 55 + nearChange * 24 - walkPenalty * 100 - adjustment * 100) * (lot.occupied ? 1 : 1.55))));
+      }
+
+      function showError(message) {
+        results.innerHTML = `<div class="empty-state" role="alert">${message}</div>`;
+      }
+
+      function render() {
+        const start = parseTime(startInput.value);
+        let end = parseTime(endInput.value);
+        if (start === null || end === null) {
+          showError("Enter a valid class start and end time to see your parking plan.");
+          return;
+        }
+        if (end <= start) end += 1440;
+        const drive = trafficDurationMinutes ?? Number(driveInput.value);
+        const paceKmh = Number(paceInput.value);
+        if (!Number.isFinite(drive) || drive < 1 || drive > 240) {
+          showError("Enter a drive time between 1 and 240 minutes.");
+          return;
+        }
+        const locationIndex = locations.indexOf(locationSelect.value);
+        const plans = lots.map((lot) => {
+          const walkMinutes = (lot.distances[locationIndex] / 1000) / (paceKmh / 60);
+          const arrival = start - walkMinutes;
+          const leaveBy = arrival - drive - 5;
+          const coverage = permitCoverage(arrival, end);
+          const availability = estimatedAvailability(lot, arrival, walkMinutes);
+          const orderScore = (coverage.covers ? 100 : 0) + availability - walkMinutes * 0.12;
+          return { lot, walkMinutes, arrival, leaveBy, coverage, availability, orderScore };
+        }).sort((a, b) => b.orderScore - a.orderScore);
+        const hasPermitMatch = plans.some((plan) => plan.coverage.covers);
+        summary.textContent = `${locationSelect.value} · Class ${formatTime(start)}–${formatTime(end)} · Estimated drive ${formatDuration(drive)}${hasTrafficEstimate ? " (Google traffic)" : ""}${hasPermitMatch ? "" : " · No lot shown covers the full stay with this permit"}`;
+        const bestPlanIndex = plans.findIndex((plan) => plan.coverage.covers);
+        const preferredIndex = bestPlanIndex === -1 ? 0 : bestPlanIndex;
+        results.innerHTML = plans.map((plan, index) => {
+          const { lot, walkMinutes, arrival, leaveBy, coverage, availability } = plan;
+          const recommended = index === preferredIndex;
+          const recommendationLabel = hasPermitMatch ? "Best fit" : "Closest option";
+          const permitLabel = coverage.covers ? "Permit covers stay" : "Permit may expire early";
+          const badgeClass = coverage.covers ? "badge" : "badge caution";
+          const distance = lot.distances[locationIndex];
+          const nextDay = coverage.allowedUntil > 1440 || (arrival < 0 && coverage.allowedUntil > 0);
+          const allowed = nextDay ? formatTime(coverage.allowedUntil) + " next day" : formatTime(coverage.allowedUntil);
+          const leave = formatTime(leaveBy);
+          const stateNote = lot.occupied
+            ? "Walking to class keeps your car here; the spot stays occupied."
+            : "You simulated driving out; this space is now counted as available.";
+          return `<article class="lot-card ${recommended && coverage.covers ? "recommended" : ""}">
+            <div class="lot-top">
+              <div><h3 class="lot-name">${lot.name}${recommended ? ` · ${recommendationLabel}` : ""}</h3><p class="lot-distance">Illustrative campus lot · about ${distance} m to ${locationSelect.value}</p></div>
+              <span class="${badgeClass}">${permitLabel}</span>
+            </div>
+            <div class="availability">
+              <span class="availability-score">${availability}%</span>
+              <span class="availability-copy">estimated chance of an open space<br>around your ${formatTime(arrival)} arrival</span>
+            </div>
+            <div class="lot-facts">
+              <div><span class="fact-label">Likely spaces open</span><span class="fact-value">${nextOpeningWindow(arrival, lot.openOffset)}</span></div>
+              <div><span class="fact-label">Permit allows you to stay until</span><span class="fact-value">${allowed}</span></div>
+              <div><span class="fact-label">Walk to class</span><span class="fact-value">${formatDuration(walkMinutes)}</span></div>
+              <div><span class="fact-label">Parking buffer</span><span class="fact-value">5 min</span></div>
+              <div class="leave-fact"><span><span class="fact-label">Personalized leave-by time</span><span class="fact-value">${leave}</span></span><span class="fact-label">Drive + parking + walk</span></div>
+            </div>
+            <p class="lot-note">${stateNote}${coverage.covers ? "" : " This permit does not cover the full estimated parking stay, so choose a different permit or check posted rules."}</p>
+            <div class="lot-actions">
+              <button class="small-button" type="button" data-action="walk" data-lot="${lot.id}">Simulate walking away</button>
+              <button class="small-button" type="button" data-action="drive" data-lot="${lot.id}">Simulate driving out</button>
+            </div>
+          </article>`;
+        }).join("");
+      }
+
+      document.getElementById("day-permit").addEventListener("click", () => setPermit("day"));
+      document.getElementById("night-permit").addEventListener("click", () => setPermit("night"));
+      document.getElementById("planner-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        render();
+      });
+      [locationSelect, startInput, endInput, driveInput, paceInput].forEach((input) => {
+        input.addEventListener("input", () => {
+          if (input === driveInput) {
+            trafficDurationMinutes = null;
+            hasTrafficEstimate = false;
+          }
+          if (input === paceInput) {
+            document.getElementById("pace-value").textContent = `${Number(input.value).toFixed(1)} km/h`;
+            document.getElementById("health-note").textContent = "Manual pace selected.";
+          }
+          render();
+        });
+        input.addEventListener("change", render);
+      });
+
+      document.getElementById("simulate-health").addEventListener("click", () => {
+        paceInput.value = "5.6";
+        document.getElementById("pace-value").textContent = "5.6 km/h";
+        document.getElementById("health-note").textContent = "Fictional health-app pace loaded: 5.6 km/h. Your trip was recalculated.";
+        render();
+      });
+
+      results.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+        const lot = lots.find((item) => item.id === button.dataset.lot);
+        if (!lot) return;
+        if (button.dataset.action === "walk") {
+          lot.occupied = true;
+          const note = button.closest(".lot-card").querySelector(".lot-note");
+          note.textContent = "You simulated walking to class. Your car remains parked, so the space stays occupied; availability for other drivers is unchanged.";
+        } else {
+          lot.occupied = false;
+          render();
+          const card = results.querySelector(`[data-lot="${lot.id}"]`)?.closest(".lot-card");
+          if (card) card.querySelector(".lot-note").textContent = "You simulated driving out. The space is now counted as available and the lot estimate has been recalculated for other drivers.";
+        }
+      });
+
+      trafficEnabled.addEventListener("change", () => {
+        document.getElementById("traffic-fields").hidden = !trafficEnabled.checked;
+        if (!trafficEnabled.checked) {
+          document.getElementById("traffic-result").textContent = "";
+          document.getElementById("traffic-result").classList.remove("error");
+        }
+      });
+
+      document.getElementById("traffic-button").addEventListener("click", async () => {
+        const origin = document.getElementById("origin").value.trim();
+        const key = document.getElementById("maps-key").value.trim();
+        const status = document.getElementById("traffic-result");
+        status.classList.remove("error");
+        if (!origin || !key) {
+          status.textContent = "Enter both a starting address and a Google Maps API key.";
+          status.classList.add("error");
+          return;
+        }
+        const start = parseTime(startInput.value);
+        if (start === null) {
+          status.textContent = "Enter a valid class start time before requesting a route.";
+          status.classList.add("error");
+          return;
+        }
+        const button = document.getElementById("traffic-button");
+        button.disabled = true;
+        button.textContent = "Checking route…";
+        status.textContent = "Requesting a traffic-aware estimate from Google Maps…";
+        try {
+          const departure = new Date();
+          const locationIndex = locations.indexOf(locationSelect.value);
+          const walkMinutes = (lots[0].distances[locationIndex] / 1000) / (Number(paceInput.value) / 60);
+          const minutesUntilLeave = start - (Date.now() - new Date().setHours(0, 0, 0, 0)) / 60000 - walkMinutes - 5;
+          departure.setMinutes(departure.getMinutes() + Math.max(0, minutesUntilLeave));
+          const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Api-Key": key,
+              "X-Goog-FieldMask": "routes.duration"
+            },
+            body: JSON.stringify({
+              origin: { address: origin },
+              destination: { address: `${locationSelect.value}, St. Francis Xavier University, Antigonish, NS, Canada` },
+              travelMode: "DRIVE",
+              routingPreference: "TRAFFIC_AWARE",
+              departureTime: departure.toISOString()
+            })
+          });
+          if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            const reason = detail.error?.message || `Google Maps returned HTTP ${response.status}.`;
+            throw new Error(reason);
+          }
+          const data = await response.json();
+          if (!data.routes || !data.routes[0] || !data.routes[0].duration) {
+            throw new Error("Google Maps did not return a route. Check the starting address and destination.");
+          }
+          const seconds = Number.parseInt(data.routes[0].duration, 10);
+          if (!Number.isFinite(seconds) || seconds < 1) throw new Error("Google Maps returned an invalid route duration.");
+          trafficDurationMinutes = Math.max(1, Math.ceil(seconds / 60));
+          hasTrafficEstimate = true;
+          driveInput.value = String(trafficDurationMinutes);
+          status.textContent = `Traffic-aware drive estimate: ${formatDuration(trafficDurationMinutes)}. Your personalized leave-by times and lot estimates were recalculated.`;
+          render();
+        } catch (error) {
+          status.textContent = `Could not get a traffic estimate: ${error.message}`;
+          status.classList.add("error");
+        } finally {
+          button.disabled = false;
+          button.textContent = "Get traffic estimate";
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

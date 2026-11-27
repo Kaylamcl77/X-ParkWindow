@@ -29,4 +29,10 @@ Key prompt I gave Copilot:
 - What worked: Copilot moved everything to where I said in the format I asked.
 - What broke, how I fixed it: The button to connect was placed at the very bottom under all the park windows. I asked Copilot to move it up into the "Plan your trip" section.
 
+## Session 4 -- November 26th -- Driver: Kayla 
+- Goal for this session: Make sure this works on mobile devices (phones)
+Key prompt I gave Copilot:
+1. "Make sure this works on mobile devices as well"
+- What worked: Copilot added more code and I tested it by emailing the link to a friend and told them to open it on their phone and play around with it.
+
 

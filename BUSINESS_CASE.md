@@ -27,6 +27,7 @@ The second resource is a partnership with STFX parking staff. This partnership w
 A competitor with a bigger budget could easily hire employees, recreate the website and collect parking information and establish a partnership with the university. Even though copying and recreating the website doesn’t take very long, collecting important parking information and data could take a full academic year or longer. X ParkWindow’s competitive advantage could become stronger over time as student users increase and relationship with STFX develops. The platforms long-term success would depend on these two resources improving rather than relying on the website and being the first mover itself.
 
 ## Cloud And Operations
+Platform as a Service (PaaS) could help the platform by helping run the application, generate departure time, process parking reports, and update the application without managing the server. This could help by lowering costs because there would be no need to buy a physical server, help with maintenance by being in charge of running the platform, and allows for a large amount of users without crashing.
 
 ## Risks And Ethics
 A risk that X ParkWindow has is student privacy. Student class schedules are used, location and when a student is. Additional to that, students can also put their departure time and length of the drive which then would risk location privacy. To protect their privacy, location sharing can be optional. 

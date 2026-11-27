@@ -34,3 +34,6 @@ A risk that X ParkWindow has is student privacy. Student class schedules are use
 The second risk could be inaccurate parking recommendation. Incorrect predictions could cause students to arrive late to class or not find any spots at all. The app can also be played with and students can lie on it to save their spot by not updating that they have left. To reduce this risk, the platform can show when the information provided was last updated and suggest other parking lots with the most recent updates.  
 
 In the future a sensor connected to the platform could be installed within each parking lots entrances and exits and update the platform in real time. These sensors could show when a car has left and when another has arrived. Although this would only solve the inaccurate parking recommendations, I think it would be a beneficial aspect to the platform to allow for real time data and app updates. 
+
+## AI Usage
+I used chatGPT to explain the prompts to me more clearly and provide examples for each. I used Gemini to find me synonyms to words whenever I sounded like a third grader instead of a university student. (ex. "give me another word for "doing" ") 
